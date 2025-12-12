@@ -1,0 +1,266 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String
+  role          String    @default("MEMBER")
+  image         String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Subscription fields
+  subscriptionStatus String? @default("inactive") // active, canceled, past_due
+  subscriptionId     String? @unique
+  subscriptionPriceId String?
+  subscriptionStartDate DateTime?
+  subscriptionEndDate DateTime?
+  
+  accounts      Account[]
+  sessions      Session[]
+  
+  // Custom relationships
+  programs      Program[]
+  enrollments   Enrollment[]
+  progress      Progress[]
+  nutritionPlans NutritionPlan[]
+  payments      Payment[]
+  uploadedVideos Video[]  @relation("VideoUploader")
+}
+
+// NEW: Dedicated Video model for better management
+model Video {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  
+  // Multiple URL options
+  cloudinaryUrl String?  // Cloudinary URL
+  youtubeUrl    String?  // YouTube URL
+  vimeoUrl      String?  // Vimeo URL
+  directUrl     String?  // Direct upload URL
+  
+  // Helper field for easy access (populated from one of the above)
+  url           String   @unique
+  
+  thumbnail     String?
+  duration      Int?     // Duration in seconds
+  size          Int?     // File size in bytes
+  format        String?  // mp4, mov, webm, etc.
+  resolution    String?  // 1080p, 720p, etc.
+  
+  // Relationships
+  exerciseId    String?
+  exercise      Exercise? @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  
+  programId     String?
+  program       Program?  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  
+  workoutId     String?
+  workout       Workout?  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  
+  uploadedById  String
+  uploadedBy    User      @relation(fields: [uploadedById], references: [id], name: "VideoUploader")
+  
+  // Metadata
+  views         Int       @default(0)
+  likes         Int       @default(0)
+  isPublic      Boolean   @default(true)
+  isFeatured    Boolean   @default(false)
+  
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Indexes for performance
+  @@index([exerciseId])
+  @@index([programId])
+  @@index([workoutId])
+  @@index([uploadedById])
+  @@index([isPublic])
+  @@index([createdAt])
+  @@unique([exerciseId]) // One video per exercise
+}
+
+// Update Exercise model to reference Video
+model Exercise {
+  id            String   @id @default(cuid())
+  name          String
+  sets          Int
+  reps          String
+  instructions  String
+  videoUrl      String?  // Keep for backward compatibility
+  workoutId     String
+  workout       Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  order         Int
+  
+  progress      Progress[]
+  video         Video?
+  
+  @@index([workoutId])
+}
+
+model Program {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  duration    Int
+  level       String
+  imageUrl    String?
+  trainerId   String
+  trainer     User     @relation(fields: [trainerId], references: [id])
+  published   Boolean  @default(false)
+  learningOutcomes String? // Pipe-delimited string of learning outcomes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  workouts    Workout[]
+  enrollments Enrollment[]
+  videos      Video[]   // Program videos (overviews, introductions)
+  parts       CoursePart[] // Course structure - parts/modules
+  
+  @@index([trainerId])
+  @@index([published])
+}
+
+model CoursePart {
+  id          String   @id @default(cuid())
+  programId   String
+  program     Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  name        String   // e.g., "Week 1 - Foundation"
+  description String?  // Brief description
+  order       Int      @default(0) // Sort order within program
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  sections    CourseSection[]
+  
+  @@index([programId])
+  @@index([order])
+}
+
+model CourseSection {
+  id          String   @id @default(cuid())
+  partId      String
+  part        CoursePart @relation(fields: [partId], references: [id], onDelete: Cascade)
+  title       String   // Section title
+  url         String   // Video/resource URL
+  order       Int      @default(0) // Sort order within part
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([partId])
+  @@index([order])
+}
+
+model Workout {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  week        Int
+  day         Int
+  programId   String
+  program     Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  
+  exercises   Exercise[]
+  videos      Video[]   // Workout overview videos
+  
+  @@index([programId])
+  @@index([week, day])
+}
+
+// Keep existing models...
+model Enrollment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  programId   String
+  program     Program  @relation(fields: [programId], references: [id])
+  startDate   DateTime @default(now())
+  endDate     DateTime?
+  active      Boolean  @default(true)
+  
+  @@unique([userId, programId])
+}
+
+model Progress {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  exerciseId  String
+  exercise    Exercise @relation(fields: [exerciseId], references: [id])
+  completedAt DateTime @default(now())
+  weight      Float?
+  notes       String?
+}
+
+model NutritionPlan {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  calories    Int
+  protein     Int
+  carbs       Int
+  fats        Int
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  meals       String
+  createdAt   DateTime @default(now())
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  amount          Float
+  currency        String   @default("usd")
+  status          String
+  stripePaymentId String   @unique
+  createdAt       DateTime @default(now())
+}
+
+// NextAuth models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

@@ -1,0 +1,320 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 220 12% 4.1%;
+    --foreground: 0 0% 95%;
+    /* Use a neutral slate/blue tone for cards in dark mode to avoid warm/brown hues */
+    --card: 220 12% 8%;
+    --card-foreground: 0 0% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 20 14.3% 4.1%;
+    --secondary: 222.2 16.3% 45%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 222.2 16.3% 35%;
+    --muted-foreground: 0 0% 75%;
+    --accent: 217.2 91.2% 59.8%;
+    --accent-foreground: 20 14.3% 4.1%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 222.2 16.3% 25%;
+    --input: 222.2 16.3% 20%;
+    --ring: 217.2 91.2% 59.8%;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  html {
+    color-scheme: light dark;
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Theme transition helper: add `theme-transition` to <html> to animate
+     color-related properties during a light/dark toggle. The class is
+     applied briefly by the Theme provider when toggling theme. */
+  .theme-transition *,
+  .theme-transition *::before,
+  .theme-transition *::after {
+    transition-property: background-color, color, border-color, box-shadow, fill, stroke, opacity, transform;
+    transition-duration: 350ms;
+    transition-timing-function: linear;
+  }
+}
+
+@layer utilities {
+  /* Entrance animations */
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes pop {
+    0% { transform: scale(.98); opacity: .0 }
+    50% { transform: scale(1.03); opacity: 1 }
+    100% { transform: scale(1); opacity: 1 }
+  }
+
+  @keyframes pulse-slow {
+    0% { opacity: 1 }
+    50% { opacity: .6 }
+    100% { opacity: 1 }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 360ms cubic-bezier(.2,.9,.2,1) both;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 300ms ease both;
+  }
+
+  .animate-pop {
+    animation: pop 320ms cubic-bezier(.2,.9,.2,1) both;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse-slow 1200ms ease-in-out infinite;
+  }
+
+  /* Helpful utility for subtle hover transform with reduced motion respect */
+  .hover-pop:hover {
+    transform: translateY(-3px) scale(1.01);
+    transition: transform 220ms ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-in-up,
+    .animate-fade-in,
+    .animate-pop,
+    .animate-pulse-slow,
+    .hover-pop {
+      animation: none !important;
+      transition: none !important;
+      transform: none !important;
+    }
+  }
+}
+
+@layer components {
+  /* Container base styles */
+  .container-base {
+    @apply w-full transition-all duration-300;
+  }
+
+  /* Wrapper for full-width sections */
+  .section-wrapper {
+    @apply w-full py-8 sm:py-12 lg:py-16;
+  }
+
+  /* Content container with max-width */
+  .content-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Modern Cards with enhanced Dark Mode */
+  .card {
+    background-color: hsl(var(--card));
+    color: hsl(var(--card-foreground));
+    border-color: hsl(var(--border));
+    @apply rounded-lg sm:rounded-xl border p-4 sm:p-6 shadow-sm transition-all duration-200;
+  }
+
+  .card:hover {
+    @apply shadow-md;
+  }
+
+  .dark .card:hover {
+    @apply shadow-lg;
+  }
+
+  .card-hover {
+    @apply hover:-translate-y-1 transition-transform duration-200;
+  }
+
+  /* Glass Effect with Dark Mode */
+  .glass {
+    background-color: hsl(var(--card) / 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-color: hsl(var(--border) / 0.5);
+    @apply border rounded-lg;
+  }
+
+  /* Modern Buttons with Dark Mode */
+  .btn {
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold
+    transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+    dark:focus-visible:ring-offset-slate-950 disabled:pointer-events-none disabled:opacity-50 h-10 px-4
+    leading-none;
+  }
+
+  .btn-primary {
+    @apply btn bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white
+    shadow-md hover:shadow-lg active:scale-95 
+      focus-visible:ring-slate-600 dark:focus-visible:ring-slate-700;
+  }
+
+  .btn-secondary {
+    /* Compact, dark-friendly secondary button used across the app */
+    @apply btn inline-flex items-center gap-2 text-sm h-9 px-3 py-2 rounded-md
+      bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700
+      text-gray-700 dark:text-gray-300
+      border border-gray-200 dark:border-slate-700
+      shadow-sm hover:shadow-md active:scale-95
+      focus-visible:ring-slate-300 dark:focus-visible:ring-slate-400;
+  }
+
+  .btn-ghost {
+    @apply btn text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800
+    transition-colors duration-200 shadow-none border-transparent
+      focus-visible:ring-slate-200 dark:focus-visible:ring-slate-700;
+  }
+
+  /* Inputs with Dark Mode */
+  .input {
+    @apply flex h-10 w-full rounded-lg px-4 py-2 text-sm file:border-0 file:bg-transparent 
+    file:text-sm file:font-medium disabled:cursor-not-allowed disabled:opacity-50
+    bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 
+    text-gray-900 dark:text-gray-50 placeholder-gray-500 dark:placeholder-gray-400
+      focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 focus:border-transparent;
+  }
+
+  /* Badges with Dark Mode */
+  .badge {
+    @apply inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold;
+  }
+
+  .badge-primary {
+    @apply badge border-blue-200 dark:border-slate-800 bg-blue-100 dark:bg-slate-800 
+    text-blue-700 dark:text-blue-300;
+  }
+
+  .badge-success {
+    @apply badge border-green-200 dark:border-green-900 bg-green-100 dark:bg-green-950 
+    text-green-700 dark:text-green-300;
+  }
+
+  .badge-warning {
+    @apply badge border-amber-200 dark:border-amber-900 bg-amber-100 dark:bg-amber-950 
+    text-amber-700 dark:text-amber-300;
+  }
+
+  .badge-danger {
+    @apply badge border-red-200 dark:border-red-900 bg-red-100 dark:bg-red-950 
+    text-red-700 dark:text-red-300;
+  }
+
+  /* Navigation */
+  .nav-link {
+    @apply text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 
+    transition-colors font-medium;
+  }
+
+  /* Progress bars with Dark Mode */
+  .progress-bar {
+    @apply h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700;
+  }
+
+  .progress-fill {
+    @apply h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 
+    dark:from-blue-600 dark:to-blue-500 transition-all duration-500;
+  }
+
+  /* Dashboard grid */
+  .dashboard-grid {
+    @apply grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+
+  /* Hero section with Dark Mode */
+  .hero-gradient {
+    @apply bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 
+    dark:from-blue-800 dark:via-blue-700 dark:to-blue-600;
+  }
+
+  /* Stat cards with Dark Mode */
+  .stat-card {
+    @apply rounded-lg border bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800 
+    p-5 sm:p-6 shadow-sm dark:shadow-md transition-all duration-200;
+  }
+
+  /* Text utilities that adapt */
+  .text-secondary {
+    @apply text-gray-600 dark:text-gray-400;
+  }
+
+  .text-muted {
+    @apply text-gray-500 dark:text-gray-400;
+  }
+
+  .bg-secondary {
+    @apply bg-gray-50 dark:bg-slate-900;
+  }
+
+  /* Form labels */
+  label {
+    @apply text-gray-700 dark:text-gray-200;
+  }
+
+  /* Dividers */
+  hr {
+    @apply border-gray-200 dark:border-slate-800;
+  }
+
+  /* Tables */
+  table {
+    @apply w-full;
+  }
+
+  thead {
+    @apply bg-gray-50 dark:bg-slate-800;
+  }
+
+  tbody tr {
+    @apply border-b border-gray-200 dark:border-slate-700;
+  }
+
+  tbody tr:hover {
+    @apply bg-gray-50 dark:bg-slate-800/50;
+  }
+
+  td, th {
+    @apply px-4 py-2 text-left text-gray-700 dark:text-gray-300;
+  }
+}

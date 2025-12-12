@@ -1,0 +1,115 @@
+/* Dark Mode Enhancements - Minimal overrides */
+/* These styles enhance dark mode without conflicting with Tailwind classes in globals.css */
+
+.dark {
+  color-scheme: dark;
+}
+
+/* Enhance contrast for headings */
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: hsl(0 0% 98%);
+}
+
+.dark p,
+.dark span,
+.dark li {
+  color: hsl(0 0% 90%);
+}
+
+/* Card shadows for depth */
+.dark .card {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.dark .card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Links */
+.dark a:not([class*="btn"]) {
+  @apply text-blue-400 hover:text-blue-300;
+}
+
+/* Code blocks */
+.dark code {
+  @apply bg-slate-800 text-slate-100 px-2 py-1 rounded text-sm;
+}
+
+.dark pre {
+  @apply bg-slate-900 border border-slate-800 p-4 rounded-lg overflow-x-auto;
+}
+
+/* Scrollbar */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: hsl(220 13% 12%);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(220 13% 28%);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(220 13% 38%);
+}
+
+/* Dialogs and modals */
+.dark [role="dialog"],
+.dark .modal {
+  @apply bg-slate-900 border-slate-800;
+}
+
+/* Dropdowns */
+.dark [role="menu"],
+.dark [role="listbox"] {
+  @apply bg-slate-800 border-slate-700;
+}
+
+.dark [role="option"]:hover {
+  @apply bg-slate-700;
+}
+
+/* Alerts */
+.dark .alert-error {
+  @apply bg-red-950 border-red-800 text-red-200;
+}
+
+.dark .alert-success {
+  @apply bg-green-950 border-green-800 text-green-200;
+}
+
+.dark .alert-warning {
+  @apply bg-amber-950 border-amber-800 text-amber-200;
+}
+
+.dark .alert-info {
+  @apply bg-slate-900 border-slate-800 text-blue-200;
+}
+
+/* Shadow utilities */
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.dark .shadow-md {
+  box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.4);
+}
+
+.dark .shadow-lg {
+  box-shadow: 0 10px 15px 0 rgba(0, 0, 0, 0.5);
+}
+
+.dark .shadow-xl {
+  box-shadow: 0 20px 25px 0 rgba(0, 0, 0, 0.6);
+}
+
