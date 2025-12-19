@@ -23,6 +23,14 @@ export async function GET(
             }
           }
         },
+        parts: {
+          orderBy: { order: 'asc' },
+          include: {
+            sections: {
+              orderBy: { order: 'asc' }
+            }
+          }
+        },
         _count: {
           select: { enrollments: true }
         }
@@ -36,7 +44,23 @@ export async function GET(
       )
     }
 
-    return NextResponse.json(program)
+    // Transform parts data to match frontend expectations
+    const transformedParts = (program.parts || []).map((part: any, partIndex: number) => ({
+      id: partIndex + 1, // Use 1-based index for frontend
+      name: part.name,
+      description: part.description || '',
+      sections: (part.sections || []).map((section: any, sectionIndex: number) => ({
+        id: sectionIndex + 1, // Use 1-based index for frontend
+        title: section.title,
+        url: section.url,
+        mediaType: section.mediaType || 'video'
+      }))
+    }))
+
+    return NextResponse.json({
+      ...program,
+      parts: transformedParts
+    })
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to fetch program' },
@@ -116,11 +140,62 @@ export async function PATCH(
       }
     }
 
-    // return fresh program with workouts
+    // If parts provided, replace existing parts and sections for this program
+    if (data.parts && Array.isArray(data.parts)) {
+      // Delete existing parts and sections
+      const existingParts = await prisma.coursePart.findMany({ where: { programId: params.id }, select: { id: true } })
+      const partIds = existingParts.map(p => p.id)
+      
+      if (partIds.length) {
+        await prisma.courseSection.deleteMany({ where: { partId: { in: partIds } } })
+        await prisma.coursePart.deleteMany({ where: { id: { in: partIds } } })
+      }
+
+      // Create new parts and sections
+      for (const [pi, part] of data.parts.entries()) {
+        if (!part.name) continue // Skip empty parts
+
+        const createdPart = await prisma.coursePart.create({
+          data: {
+            programId: params.id,
+            name: part.name,
+            description: part.description || null,
+            order: pi,
+          }
+        })
+
+        // Save sections for this part
+        if (part.sections && Array.isArray(part.sections)) {
+          for (const [si, section] of part.sections.entries()) {
+            if (!section.title || !section.url) continue // Skip incomplete sections
+
+            await prisma.courseSection.create({
+              data: {
+                partId: createdPart.id,
+                title: section.title,
+                url: section.url,
+                mediaType: section.mediaType || 'video',
+                order: si,
+              }
+            })
+          }
+        }
+      }
+    }
+
+    // return fresh program with workouts and parts
     const program = await prisma.program.findUnique({
       where: { id: params.id },
       include: {
         trainer: true,
+        parts: {
+          orderBy: { order: 'asc' },
+          include: {
+            sections: {
+              orderBy: { order: 'asc' }
+            }
+          }
+        },
         workouts: {
           orderBy: [{ week: 'asc' }, { day: 'asc' }],
           include: { exercises: { orderBy: { order: 'asc' } } }

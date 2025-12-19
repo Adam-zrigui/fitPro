@@ -18,13 +18,13 @@ export default function Navbar() {
       <div className="content-container">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3 group" aria-label="FitPro Academy home">
-            <div className="bg-gradient-to-br from-blue-600 to-blue-500 dark:from-blue-500 dark:to-cyan-500 p-2 rounded-lg sm:rounded-xl group-hover:scale-105 transition-transform">
-              <Dumbbell className="h-5 sm:h-6 w-5 sm:w-6 text-white" />
+          <Link href="/" className="flex items-center space-x-3 group hover-pop" aria-label="FitPro Academy home">
+            <div className="bg-gradient-to-br from-blue-600 to-blue-500 dark:from-blue-500 dark:to-cyan-500 p-2 rounded-lg sm:rounded-xl group-hover:scale-105 transition-transform shadow-sm hover:shadow-md">
+              <Dumbbell className="h-5 sm:h-6 w-5 sm:w-6 text-white transition-transform duration-300 group-hover:rotate-6" />
             </div>
             <div>
               <span className="sr-only">FitPro Academy</span>
-              <span className="hidden sm:inline text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-300 dark:to-cyan-300 bg-clip-text text-transparent">
+              <span className="hidden sm:inline text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-300 dark:to-cyan-300 bg-clip-text text-transparent tracking-tight animate-fade-in">
                 FitPro
               </span>
               <span className="sm:hidden text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-300 dark:to-cyan-300 bg-clip-text text-transparent">

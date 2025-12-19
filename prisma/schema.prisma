@@ -35,6 +35,23 @@ model User {
   nutritionPlans NutritionPlan[]
   payments      Payment[]
   uploadedVideos Video[]  @relation("VideoUploader")
+  emailVerificationTokens EmailVerificationToken[]
+  comments      Comment[]
+  ratings       Rating[]
+}
+
+// Email verification token model
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([expiresAt])
 }
 
 // NEW: Dedicated Video model for better management
@@ -50,7 +67,7 @@ model Video {
   directUrl     String?  // Direct upload URL
   
   // Helper field for easy access (populated from one of the above)
-  url           String   @unique
+  // `url` removed to force using uploaded files (`directUrl`) or cloud storage fields
   
   thumbnail     String?
   duration      Int?     // Duration in seconds
@@ -127,6 +144,8 @@ model Program {
   enrollments Enrollment[]
   videos      Video[]   // Program videos (overviews, introductions)
   parts       CoursePart[] // Course structure - parts/modules
+  comments    Comment[] // Comments on program videos
+  ratings     Rating[]
   
   @@index([trainerId])
   @@index([published])
@@ -154,6 +173,7 @@ model CourseSection {
   part        CoursePart @relation(fields: [partId], references: [id], onDelete: Cascade)
   title       String   // Section title
   url         String   // Video/resource URL
+  mediaType   String   @default("video") // 'video' only
   order       Int      @default(0) // Sort order within part
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -263,4 +283,51 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// Comments model for video discussions
+model Comment {
+  id        String   @id @default(cuid())
+  text      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videoId   String?  // For video-specific comments
+  exerciseId String? // For exercise-specific comments
+  programId String   // Program context
+  program   Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  // Like/dislike counts
+  likes     Int      @default(0)
+  dislikes  Int      @default(0)
+
+  // Parent comment for replies
+  parentId  String?
+  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([programId])
+  @@index([exerciseId])
+  @@index([videoId])
+  @@index([userId])
+  @@index([parentId])
+}
+
+// Ratings model for user course ratings
+model Rating {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  programId String
+  program   Program  @relation(fields: [programId], references: [id])
+  score     Int      // 1-5
+  review    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, programId])
+  @@index([programId])
+  @@index([userId])
 }

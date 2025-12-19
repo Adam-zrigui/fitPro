@@ -48,7 +48,6 @@ export async function POST(req: NextRequest) {
           title: title || video.title,
           description: description || video.description,
           youtubeUrl,
-          url: youtubeUrl, // Also store in url field for compatibility
         }
       })
     } else {
@@ -58,7 +57,6 @@ export async function POST(req: NextRequest) {
           title: title || 'YouTube Video',
           description: description || null,
           youtubeUrl,
-          url: youtubeUrl,
           uploadedById: session.user.id,
           exerciseId: exerciseId,
         }

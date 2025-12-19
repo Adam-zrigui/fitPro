@@ -97,6 +97,11 @@
     100% { opacity: 1 }
   }
 
+  @keyframes background-zoom {
+    from { background-size: 100% 100%; }
+    to { background-size: 110% 110%; }
+  }
+
   .animate-fade-in-up {
     animation: fade-in-up 360ms cubic-bezier(.2,.9,.2,1) both;
   }
@@ -111,6 +116,10 @@
 
   .animate-pulse-slow {
     animation: pulse-slow 1200ms ease-in-out infinite;
+  }
+
+  .animate-background-zoom {
+    animation: background-zoom 20s ease-in-out infinite alternate;
   }
 
   /* Helpful utility for subtle hover transform with reduced motion respect */

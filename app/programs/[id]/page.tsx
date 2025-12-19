@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { notFound, redirect } from 'next/navigation'
 import CourseOutline from '@/components/CourseOutline'
+import ImageWithFallback from '@/components/ImageWithFallback'
 import StaggerList from '@/components/StaggerList'
 import { Clock, BarChart3, Award, CheckCircle, Video, Lock } from 'lucide-react'
 import EnrollButton from './EnrollButton'
@@ -22,6 +23,14 @@ export default async function ProgramDetailPage({ params }: { params: { id: stri
       where: { id: params.id },
       include: {
         trainer: true,
+        parts: {
+          orderBy: { id: 'asc' },
+          include: {
+            sections: {
+              orderBy: { id: 'asc' }
+            }
+          }
+        },
         workouts: {
           orderBy: [{ week: 'asc' }, { day: 'asc' }],
           include: {
@@ -112,7 +121,7 @@ export default async function ProgramDetailPage({ params }: { params: { id: stri
     // duration: w.duration ?? undefined, // Removed because 'duration' does not exist on workout
     exercises: (w.exercises || []).map((e: any) => {
       const linkedVideo = e.video ?? null
-      const inferredVideoUrl = linkedVideo ? (linkedVideo.url || linkedVideo.cloudinaryUrl || linkedVideo.directUrl || null) : null
+      const inferredVideoUrl = linkedVideo ? (linkedVideo.directUrl || linkedVideo.cloudinaryUrl || linkedVideo.youtubeUrl || linkedVideo.vimeoUrl || null) : null
       return {
         id: e.id,
         name: e.name,
@@ -139,6 +148,14 @@ export default async function ProgramDetailPage({ params }: { params: { id: stri
           <div className="lg:col-span-2 space-y-6">
             <div className="card bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800 shadow-md hover:shadow-lg transition-shadow overflow-hidden">
               <div className="relative h-80 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 dark:from-blue-800 dark:via-purple-800 dark:to-pink-700 overflow-hidden">
+                {program.imageUrl && (
+                  <ImageWithFallback
+                    src={program.imageUrl}
+                    alt={program.title}
+                    className="w-full h-full object-cover"
+                    fallback="gradient"
+                  />
+                )}
                 {/* Animated background elements */}
                 <div className="absolute inset-0 opacity-30">
                   <div className="absolute top-10 left-10 w-40 h-40 bg-white rounded-full blur-3xl animate-pulse"></div>
@@ -265,6 +282,52 @@ export default async function ProgramDetailPage({ params }: { params: { id: stri
                     <Lock className="h-12 w-12 text-amber-600 dark:text-amber-400 mx-auto mb-3" />
                     <p className="text-gray-900 dark:text-gray-50 font-semibold">Subscribe to view course outline</p>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Program Parts and Sections */}
+            {program.parts && program.parts.length > 0 && (
+              <div className="card bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800 shadow-md">
+                <h3 className="text-xl font-bold mb-6 text-gray-900 dark:text-gray-50">Course Content</h3>
+                <div className="space-y-6">
+                  {program.parts.map((part: any, partIndex: number) => (
+                    <div key={part.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
+                      <h4 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-50">
+                        Part {partIndex + 1}: {part.name}
+                      </h4>
+                      {part.description && (
+                        <p className="text-secondary mb-4">{part.description}</p>
+                      )}
+                      <div className="space-y-3">
+                        {part.sections.map((section: any) => (
+                          <div key={section.id} className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                            <div className="flex-1">
+                              <h5 className="font-medium text-gray-900 dark:text-gray-50">{section.title}</h5>
+                              {section.url && (
+                                <div className="mt-2">
+                                  {section.mediaType === 'video' ? (
+                                    <video
+                                      src={section.url}
+                                      controls
+                                      className="w-full max-w-md rounded-lg"
+                                      preload="metadata"
+                                    />
+                                  ) : (
+                                    <img
+                                      src={section.url}
+                                      alt={section.title}
+                                      className="w-full max-w-md rounded-lg object-cover"
+                                    />
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

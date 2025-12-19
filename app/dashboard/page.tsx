@@ -1,125 +1,171 @@
-import { getServerSession } from 'next-auth'
-import { redirect } from 'next/navigation'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
-import { Calendar, TrendingUp, Award, Dumbbell, Play, BookOpen, Plus, BarChart3, Clock, Users, Camera, Settings } from 'lucide-react'
+'use client'
+
+import { useState, useEffect, Suspense } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { Calendar, TrendingUp, Award, Dumbbell, Play, BookOpen, Plus, BarChart3, Clock, Users, Camera, Settings, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import DashboardProfileCard from '@/components/DashboardProfileCard'
-export default async function DashboardPage() {
-  const session = await getServerSession(authOptions)
-  
-  if (!session) {
-    redirect('/auth/signin')
-  }
 
-  // Get user enrollments, progress and trainer programs with error handling
-  let enrollments: any[] = []
-  let userProgress: any[] = []
-  const progressByProgram: Record<string, { completed: number; total: number; percentage: number }> = {}
-  let trainerPrograms: any[] = []
-  let totalWorkouts = 0
-  let totalActivePrograms = 0
-  let hasActiveSubscription = false
+function DashboardSkeleton() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-slate-950 dark:to-slate-900 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header Skeleton */}
+        <div className="mb-8">
+          <div className="h-8 bg-gray-200 dark:bg-slate-700 rounded w-64 mb-2 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-96 animate-pulse"></div>
+        </div>
 
-  try {
-    // Check if user has active subscription
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        subscriptionStatus: true,
-        subscriptionId: true,
-      }
-    })
+        {/* Stats Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700">
+              <div className="flex items-center justify-between">
+                <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-24 animate-pulse"></div>
+                <div className="h-6 w-6 bg-gray-200 dark:bg-slate-700 rounded animate-pulse"></div>
+              </div>
+              <div className="h-8 bg-gray-200 dark:bg-slate-700 rounded w-16 mt-2 animate-pulse"></div>
+            </div>
+          ))}
+        </div>
 
-    hasActiveSubscription = user?.subscriptionStatus === 'active' || !!user?.subscriptionId
+        {/* Programs Section Skeleton */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700 mb-8">
+          <div className="h-6 bg-gray-200 dark:bg-slate-700 rounded w-48 mb-4 animate-pulse"></div>
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex items-center space-x-4 p-4 border border-gray-200 dark:border-slate-700 rounded-lg">
+                <div className="h-12 w-12 bg-gray-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-32 mb-2 animate-pulse"></div>
+                  <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-24 animate-pulse"></div>
+                </div>
+                <div className="h-8 bg-gray-200 dark:bg-slate-700 rounded w-20 animate-pulse"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
-    // If user has active subscription, get ALL programs (subscription grants access to all)
-    // Otherwise, get only explicit enrollments
-    if (hasActiveSubscription) {
-      const programs = await prisma.program.findMany({
-        where: { published: true },
-        include: {
-          trainer: true,
-          workouts: {
-            include: {
-              exercises: true
-            }
-          },
-          _count: { select: { enrollments: true } }
-        },
-        orderBy: { createdAt: 'desc' }
-      })
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardContent />
+    </Suspense>
+  )
+}
 
-      enrollments = programs.map(program => ({
-        program,
-        active: true,
-        userId: session.user.id
-      }))
-    } else {
-      // Get only explicit enrollments for non-subscribed users
-      enrollments = await prisma.enrollment.findMany({
-        where: { userId: session.user.id, active: true },
-        include: {
-          program: {
-            include: {
-              trainer: true,
-              workouts: {
-                include: {
-                  exercises: true
-                }
-              },
-              _count: { select: { enrollments: true } }
-            }
-          }
-        }
-      })
+function DashboardContent() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<any>(null)
+
+  useEffect(() => {
+    if (status === 'loading') return
+
+    if (!session) {
+      router.push('/auth/signin')
+      return
     }
 
-    // Get user progress
-    userProgress = await prisma.progress.findMany({
-      where: { userId: session.user.id },
-      include: { exercise: { include: { workout: true } } }
-    })
+    // Fetch dashboard data
+    fetchDashboardData()
+  }, [session, status, router])
 
-    // Calculate progress per program
-    enrollments.forEach(enrollment => {
-      const programId = enrollment.program.id
-      const totalExercises = enrollment.program.workouts.reduce((sum: number, w: any) => sum + w.exercises.length, 0) || 1
-      const completedExercises = userProgress.filter(p => 
-        p.exercise.workout.programId === programId
-      ).length
-      
-      progressByProgram[programId] = {
-        completed: completedExercises,
-        total: totalExercises,
-        percentage: Math.round((completedExercises / totalExercises) * 100)
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/dashboard', {
+        // Add cache control for better performance
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      })
+
+      if (!response.ok) {
+        if (response.status === 500) {
+          throw new Error('Database temporarily unavailable. Please try again in a moment.')
+        }
+        throw new Error('Failed to load dashboard data')
       }
-    })
 
-    // Get trainer's created programs
-    trainerPrograms = session.user.role === 'TRAINER' || session.user.role === 'ADMIN' 
-      ? await prisma.program.findMany({
-          where: { trainerId: session.user.id },
-          include: {
-            _count: { select: { enrollments: true, workouts: true } }
-          },
-          orderBy: { createdAt: 'desc' }
-        })
-      : []
-
-    totalWorkouts = userProgress.length
-    totalActivePrograms = enrollments.length
-  } catch (error) {
-    // If DB is unreachable, log and fall back to empty arrays so UI can render with sample/fallback state
-    // eslint-disable-next-line no-console
-    console.error('Dashboard data fetch failed:', error)
-    enrollments = []
-    userProgress = []
-    trainerPrograms = []
-    totalWorkouts = 0
-    totalActivePrograms = 0
+      const dashboardData = await response.json()
+      setData(dashboardData)
+    } catch (error: any) {
+      console.error('Failed to fetch dashboard data:', error)
+      // Show user-friendly error message
+      setData({
+        enrollments: [],
+        userProgress: [],
+        progressByProgram: {},
+        trainerPrograms: [],
+        totalWorkouts: 0,
+        totalActivePrograms: 0,
+        hasActiveSubscription: false,
+        userRole: 'MEMBER',
+        error: error.message || 'Unable to connect to database. Please check your connection and try again.'
+      })
+    } finally {
+      setLoading(false)
+    }
   }
-  const isTrainerOrAdmin = session.user.role === 'TRAINER' || session.user.role === 'ADMIN'
+
+  if (status === 'loading' || loading) {
+    return <DashboardSkeleton />
+  }
+
+  if (!session || !data) {
+    return null
+  }
+
+  // Extract data from API response
+  const {
+    enrollments,
+    userProgress,
+    progressByProgram,
+    trainerPrograms,
+    totalWorkouts,
+    totalActivePrograms,
+    hasActiveSubscription,
+    userRole,
+    error
+  } = data
+
+  // Show error message if database connection failed
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-slate-950 dark:to-slate-900 transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
+            <div className="flex items-center space-x-3">
+              <div className="flex-shrink-0">
+                <svg className="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-red-800 dark:text-red-200">Connection Error</h3>
+                <p className="text-red-700 dark:text-red-300 mt-1">{error}</p>
+                <button
+                  onClick={fetchDashboardData}
+                  className="mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const isTrainerOrAdmin = userRole === 'TRAINER' || userRole === 'ADMIN'
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-slate-950 dark:to-slate-900 transition-colors duration-300">
       
@@ -226,7 +272,7 @@ export default async function DashboardPage() {
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {enrollments.map((enrollment) => {
+              {enrollments.map((enrollment: any) => {
                 const progress = progressByProgram[enrollment.program.id]
                 return (
                   <div
@@ -323,7 +369,7 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {trainerPrograms.map((program) => (
+                {trainerPrograms.map((program: any) => (
                   <div
                     key={program.id}
                     className="border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden hover:shadow-xl dark:hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-white dark:bg-slate-900 flex flex-col"

@@ -2,17 +2,21 @@
 
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Dumbbell, Mail, Lock, ArrowRight, ArrowLeft } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
 export default function SignInPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [prefetching, setPrefetching] = useState(false)
+
+  const isRegistered = searchParams.get('registered') === 'true'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,8 +31,16 @@ export default function SignInPage() {
       })
 
       if (result?.error) {
-        setError('Invalid email or password')
+        setError(result.error)
       } else {
+        // Prefetch dashboard data before navigation for faster loading
+        setPrefetching(true)
+        fetch('/api/dashboard', { method: 'GET' }).catch(() => {
+          // Ignore prefetch errors - dashboard will handle loading
+        }).finally(() => {
+          setPrefetching(false)
+        })
+
         router.push('/dashboard')
         router.refresh()
       }
@@ -40,7 +52,9 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-cover bg-center bg-no-repeat animate-background-zoom" style={{ backgroundImage: "url('/uploads/gym-background.jpg')" }}>
+      {/* Dark overlay for dark mode */}
+      <div className="absolute inset-0 bg-black/20 dark:bg-black/40"></div>
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* hide decorative blobs in dark mode to keep contrast */}
@@ -56,7 +70,7 @@ export default function SignInPage() {
           <div>
             <Link
               href="/"
-              className="inline-flex items-center gap-2 text-secondary hover:text-gray-900 transition-colors font-medium group"
+              className="inline-flex items-center gap-2 text-white hover:text-blue-200 transition-colors font-medium group"
             >
               <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
               Back
@@ -75,10 +89,10 @@ export default function SignInPage() {
               <Dumbbell className="h-16 w-16 text-white relative bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-full" />
             </div>
           </div>
-          <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 mb-2">
+          <h1 className="text-4xl font-extrabold text-white mb-2">
             FitAcademy
           </h1>
-          <p className="text-secondary text-lg mb-2">Transform Your Fitness Journey</p>
+          <p className="text-blue-100 text-lg mb-2">Transform Your Fitness Journey</p>
         </div>
 
         {/* Form Card */}
@@ -90,6 +104,13 @@ export default function SignInPage() {
           {error && (
             <div className="bg-red-50/80 border border-red-200 text-red-700 px-4 py-4 rounded-xl text-sm font-medium animate-shake">
               {error}
+            </div>
+          )}
+
+          {/* Success Message */}
+          {isRegistered && (
+            <div className="bg-green-50/80 border border-green-200 text-green-700 px-4 py-4 rounded-xl text-sm font-medium">
+              Account created successfully! You can now sign in.
             </div>
           )}
 
@@ -130,13 +151,18 @@ export default function SignInPage() {
           {/* Sign In Button */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || prefetching}
             className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>
                 <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 Signing in...
+              </>
+            ) : prefetching ? (
+              <>
+                <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Loading dashboard...
               </>
             ) : (
               <>

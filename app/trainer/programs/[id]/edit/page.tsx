@@ -9,7 +9,7 @@ type Section = {
   id: number;
   title: string;
   url: string;
-  resourceType: string;
+  mediaType: 'video';
 };
 
 type Part = {
@@ -18,17 +18,6 @@ type Part = {
   description: string;
   sections: Section[];
 };
-
-// Helpers for YouTube detection / embed
-const isYouTubeUrl = (url: string) => /(?:youtube\.com\/watch\?v=|youtu\.be\/)/i.test(url)
-const getYouTubeEmbedUrl = (url: string) => {
-  try {
-    const m = url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^?&]+)/)
-    return m ? `https://www.youtube.com/embed/${m[1]}` : null
-  } catch (e) {
-    return null
-  }
-}
 
 export default function EditProgramPage({ params }: { params: { id: string } }) {
   const router = useRouter()
@@ -45,42 +34,6 @@ export default function EditProgramPage({ params }: { params: { id: string } }) 
   useEffect(() => {
     fetchProgram()
   }, [params.id])
-
-  // Initialize previews for existing URLs on mount or parts change
-  useEffect(() => {
-    parts.forEach((part) => {
-      part.sections.forEach((section) => {
-        const key = `${part.id}-${section.id}`
-        if (section.resourceType === 'url' && section.url) {
-          try {
-            const yt = getYouTubeEmbedUrl(section.url)
-            if (yt) {
-              setSectionPreviews(prev => ({ ...prev, [key]: yt }))
-              setSectionPreviewErrors(prev => ({ ...prev, [key]: null }))
-            } else if (/\.(mp4|webm|ogg)($|\?)/i.test(section.url)) {
-              const v = document.createElement('video')
-              v.onloadeddata = () => {
-                setSectionPreviews(prev => ({ ...prev, [key]: section.url }))
-                setSectionPreviewErrors(prev => ({ ...prev, [key]: null }))
-              }
-              v.onerror = () => setSectionPreviewErrors(prev => ({ ...prev, [key]: 'Preview failed to load resource URL' }))
-              v.src = section.url
-            } else {
-              const img = new Image()
-              img.onload = () => {
-                setSectionPreviews(prev => ({ ...prev, [key]: section.url }))
-                setSectionPreviewErrors(prev => ({ ...prev, [key]: null }))
-              }
-              img.onerror = () => setSectionPreviewErrors(prev => ({ ...prev, [key]: 'Preview failed to load resource URL' }))
-              img.src = section.url
-            }
-          } catch (err) {
-            setSectionPreviewErrors(prev => ({ ...prev, [key]: 'Preview failed to load resource URL' }))
-          }
-        }
-      })
-    })
-  }, [parts])
 
   const fetchProgram = async () => {
     try {
@@ -110,7 +63,7 @@ export default function EditProgramPage({ params }: { params: { id: string } }) 
 
   const addPart = () => {
     const newPartId = Math.max(...parts.map(p => p.id), 0) + 1
-    setParts(prev => [...prev, { id: newPartId, name: '', description: '', sections: [{ id: 1, title: '', url: '', resourceType: 'url' }] }])
+    setParts(prev => [...prev, { id: newPartId, name: '', description: '', sections: [{ id: 1, title: '', url: '', mediaType: 'video' }] }])
   }
 
   const removePart = (partIndex: number) => {
@@ -151,7 +104,7 @@ export default function EditProgramPage({ params }: { params: { id: string } }) 
     setParts(prev => {
       const copy = [...prev]
       const maxSectionId = Math.max(...(copy[partIndex].sections.map(s => s.id) || [0]), 0)
-      copy[partIndex].sections.push({ id: maxSectionId + 1, title: '', url: '', resourceType: 'url' })
+      copy[partIndex].sections.push({ id: maxSectionId + 1, title: '', url: '', mediaType: 'video' })
       return copy
     })
   }
@@ -180,7 +133,7 @@ export default function EditProgramPage({ params }: { params: { id: string } }) 
     })
   }
 
-  const updateSection = (partIndex: number, sectionIndex: number, field: 'title' | 'url' | 'resourceType', value: string) => {
+  const updateSection = (partIndex: number, sectionIndex: number, field: 'title' | 'url' | 'mediaType', value: string) => {
     setParts(prev => {
       const copy = [...prev]
       copy[partIndex].sections[sectionIndex] = {
@@ -312,10 +265,36 @@ export default function EditProgramPage({ params }: { params: { id: string } }) 
                     onClick={async () => {
                       setSaving(true)
                       try {
+                        // Prepare parts and upload any section files that were selected
+                        const payloadParts = JSON.parse(JSON.stringify(parts))
+                        for (let pi = 0; pi < payloadParts.length; pi++) {
+                          const part = payloadParts[pi]
+                          for (let si = 0; si < part.sections.length; si++) {
+                            const section = part.sections[si]
+                            const key = `${part.id}-${section.id}`
+                            const file = sectionFiles[key]
+                            if (!file) {
+                              alert('Please attach files for all sections')
+                              setSaving(false)
+                              return
+                            }
+
+                            const fd = new FormData()
+                            fd.append('file', file)
+                            const sRes = await fetch('/api/upload', { method: 'POST', body: fd })
+                            if (!sRes.ok) {
+                              const t = await sRes.text()
+                              throw new Error(t || 'Failed to upload section file')
+                            }
+                            const sJson = await sRes.json()
+                            section.url = sJson.url
+                          }
+                        }
+
                         await fetch(`/api/programs/${params.id}`, {
                           method: 'PATCH',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ parts })
+                          body: JSON.stringify({ parts: payloadParts })
                         })
                         await fetchProgram()
                       } catch (err) {
@@ -404,140 +383,66 @@ export default function EditProgramPage({ params }: { params: { id: string } }) 
                                     />
 
                                     <div className="flex gap-2 items-center text-sm">
-                                      <label className={`px-2 py-1 rounded-lg cursor-pointer border ${((section as any).resourceType || 'url') === 'url' ? 'border-blue-600 text-blue-600 dark:text-blue-300' : 'border-gray-300 text-gray-700 dark:text-gray-300'}`}>
+                                      <label className={`px-2 py-1 rounded-lg cursor-pointer border ${section.mediaType === 'video' ? 'border-blue-600 text-blue-600 dark:text-blue-300' : 'border-gray-300 text-gray-700 dark:text-gray-300'}`}>
                                         <input
                                           type="radio"
-                                          name={`resourceType-${partIndex}-${sectionIndex}`}
-                                          value="url"
-                                          checked={((section as any).resourceType || 'url') === 'url'}
-                                          onChange={() => {
-                                            updateSection(partIndex, sectionIndex, 'resourceType', 'url')
-                                            setSectionFiles(prev => ({ ...prev, [key]: null }))
-                                            setSectionPreviews(prev => ({ ...prev, [key]: null }))
-                                            setSectionPreviewErrors(prev => ({ ...prev, [key]: null }))
-                                          }}
+                                          name={`mediaType-${partIndex}-${sectionIndex}`}
+                                          value="video"
+                                          checked={section.mediaType === 'video'}
+                                          onChange={() => updateSection(partIndex, sectionIndex, 'mediaType', 'video')}
                                           className="sr-only"
                                         />
-                                        URL
-                                      </label>
-
-                                      <label className={`px-2 py-1 rounded-lg cursor-pointer border ${((section as any).resourceType || 'url') === 'file' ? 'border-blue-600 text-blue-600 dark:text-blue-300' : 'border-gray-300 text-gray-700 dark:text-gray-300'}`}>
-                                        <input
-                                          type="radio"
-                                          name={`resourceType-${partIndex}-${sectionIndex}`}
-                                          value="file"
-                                          checked={((section as any).resourceType || 'url') === 'file'}
-                                          onChange={() => {
-                                            updateSection(partIndex, sectionIndex, 'resourceType', 'file')
-                                            updateSection(partIndex, sectionIndex, 'url', '')
-                                            setSectionPreviews(prev => ({ ...prev, [key]: null }))
-                                            setSectionPreviewErrors(prev => ({ ...prev, [key]: null }))
-                                          }}
-                                          className="sr-only"
-                                        />
-                                        File
+                                        Video
                                       </label>
                                     </div>
 
-                                    {section.resourceType === 'url' ? (
-                                      <input
-                                        type="url"
-                                        className="input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600 dark:focus:ring-slate-700 focus:border-transparent text-sm dark:bg-slate-800 dark:text-gray-50"
-                                        placeholder="https://..."
-                                        value={section.url}
-                                        onChange={(e) => {
-                                          const val = e.target.value
-                                          updateSection(partIndex, sectionIndex, 'url', val)
-                                          setSectionPreviewErrors(prev => ({ ...prev, [key]: null }))
-
-                                          if (val) {
-                                            try {
-                                              const yt = getYouTubeEmbedUrl(val)
-                                              if (yt) {
-                                                setSectionPreviews(prev => ({ ...prev, [key]: yt }))
-                                                setSectionPreviewErrors(prev => ({ ...prev, [key]: null }))
-                                              } else if (/\.(mp4|webm|ogg)($|\?)/i.test(val)) {
-                                                const v = document.createElement('video')
-                                                v.onloadeddata = () => {
-                                                  setSectionPreviews(prev => ({ ...prev, [key]: val }))
-                                                  setSectionPreviewErrors(prev => ({ ...prev, [key]: null }))
-                                                }
-                                                v.onerror = () => setSectionPreviewErrors(prev => ({ ...prev, [key]: 'Preview failed to load resource URL' }))
-                                                v.src = val
-                                              } else {
-                                                const img = new Image()
-                                                img.onload = () => {
-                                                  setSectionPreviews(prev => ({ ...prev, [key]: val }))
-                                                  setSectionPreviewErrors(prev => ({ ...prev, [key]: null }))
-                                                }
-                                                img.onerror = () => setSectionPreviewErrors(prev => ({ ...prev, [key]: 'Preview failed to load resource URL' }))
-                                                img.src = val
+                                    <input
+                                      type="file"
+                                      accept="video/*"
+                                      onChange={(e) => {
+                                        const f = e.target.files && e.target.files[0]
+                                        if (f) {
+                                          setSectionFiles(prev => ({ ...prev, [key]: f }))
+                                          try {
+                                            setSectionPreviews(prev => {
+                                              if (prev[key]) {
+                                                try { URL.revokeObjectURL(prev[key] as string) } catch (er) {}
                                               }
-                                            } catch (err) {
-                                              setSectionPreviewErrors(prev => ({ ...prev, [key]: 'Preview failed to load resource URL' }))
-                                            }
-                                          } else {
+                                              const url = URL.createObjectURL(f)
+                                              return { ...prev, [key]: url }
+                                            })
+                                            setSectionPreviewErrors(prev => ({ ...prev, [key]: null }))
+                                          } catch (err) {
                                             setSectionPreviews(prev => ({ ...prev, [key]: null }))
+                                            setSectionPreviewErrors(prev => ({ ...prev, [key]: 'Failed to create preview for selected file' }))
                                           }
-                                        }}
-                                      />
-                                    ) : (
-                                      <>
-                                        <input
-                                          type="file"
-                                          accept="*/*"
-                                          onChange={(e) => {
-                                            const f = e.target.files && e.target.files[0]
-                                            if (f) {
-                                              setSectionFiles(prev => ({ ...prev, [key]: f }))
-                                              try {
-                                                setSectionPreviews(prev => {
-                                                  if (prev[key]) {
-                                                    try { URL.revokeObjectURL(prev[key] as string) } catch (er) {}
-                                                  }
-                                                  const url = URL.createObjectURL(f)
-                                                  return { ...prev, [key]: url }
-                                                })
-                                                setSectionPreviewErrors(prev => ({ ...prev, [key]: null }))
-                                              } catch (err) {
-                                                setSectionPreviews(prev => ({ ...prev, [key]: null }))
-                                                setSectionPreviewErrors(prev => ({ ...prev, [key]: 'Failed to create preview for selected file' }))
-                                              }
-                                            } else {
-                                              setSectionFiles(prev => ({ ...prev, [key]: null }))
-                                              setSectionPreviews(prev => ({ ...prev, [key]: null }))
-                                              setSectionPreviewErrors(prev => ({ ...prev, [key]: null }))
-                                            }
-                                          }}
-                                          className="w-full"
-                                        />
-                                        <p className="text-xs text-muted mt-1">Upload a file for this section (video, PDF, etc.)</p>
-                                      </>
-                                    )}
+                                        } else {
+                                          setSectionFiles(prev => ({ ...prev, [key]: null }))
+                                          setSectionPreviews(prev => ({ ...prev, [key]: null }))
+                                          setSectionPreviewErrors(prev => ({ ...prev, [key]: null }))
+                                        }
+                                      }}
+                                      className="w-full"
+                                    />
+                                    <p className="text-xs text-muted mt-1">Upload a {section.mediaType} for this section</p>
 
                                     <div className="mt-2">
                                       {sectionPreviewErrors[key] && <p className="text-xs text-red-500">{sectionPreviewErrors[key]}</p>}
-                                      {sectionPreviews[key] && (
-                                        section.resourceType === 'file' ? (
-                                          (sectionFiles[key] && sectionFiles[key]?.type?.startsWith('video')) ? (
-                                            <video src={sectionPreviews[key] || undefined} controls className="w-64 h-36 rounded-lg object-cover" />
-                                          ) : (sectionFiles[key] && sectionFiles[key]?.type?.startsWith('image')) ? (
-                                            <img src={sectionPreviews[key] || undefined} className="w-64 h-36 rounded-lg object-cover" />
-                                          ) : (
-                                            <a href={sectionPreviews[key] || undefined} target="_blank" rel="noreferrer" className="text-sm underline">Open file</a>
-                                          )
+                                      {sectionPreviews[key] ? (
+                                        (sectionFiles[key] && sectionFiles[key]?.type?.startsWith('video')) ? (
+                                          <video src={sectionPreviews[key] || undefined} controls className="w-64 h-36 rounded-lg object-cover" />
+                                        ) : (sectionFiles[key] && sectionFiles[key]?.type?.startsWith('image')) ? (
+                                          <img src={sectionPreviews[key] || undefined} className="w-64 h-36 rounded-lg object-cover" />
                                         ) : (
-                                          isYouTubeUrl(section.url || '') ? (
-                                            <div className="w-64 h-36 rounded-lg overflow-hidden">
-                                              <iframe src={getYouTubeEmbedUrl(section.url || '') || undefined} title="YouTube preview" className="w-full h-full" allowFullScreen />
-                                            </div>
-                                          ) : (/\.(mp4|webm|ogg)($|\?)/i.test(section.url || '')) ? (
-                                            <video src={sectionPreviews[key] || section.url || undefined} controls className="w-64 h-36 rounded-lg object-cover" />
-                                          ) : (
-                                            <img src={sectionPreviews[key] || section.url || undefined} className="w-64 h-36 rounded-lg object-cover" onError={() => setSectionPreviewErrors(prev => ({ ...prev, [key]: 'Preview failed to load resource URL' }))} />
-                                          )
+                                          <a href={sectionPreviews[key] || undefined} target="_blank" rel="noreferrer" className="text-sm underline">Open file</a>
                                         )
-                                      )}
+                                      ) : section.url ? (
+                                        section.mediaType === 'video' ? (
+                                          <video src={section.url} controls className="w-64 h-36 rounded-lg object-cover" />
+                                        ) : (
+                                          <a href={section.url} target="_blank" rel="noreferrer" className="text-sm underline">Open {section.mediaType}</a>
+                                        )
+                                      ) : null}
                                     </div>
                                   </div>
 

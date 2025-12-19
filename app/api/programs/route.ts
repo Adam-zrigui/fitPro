@@ -7,7 +7,13 @@ export async function GET() {
   try {
     const programs = await prisma.program.findMany({
       where: { published: true },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        duration: true,
+        level: true,
+        imageUrl: true,
         trainer: {
           select: {
             id: true,
@@ -61,7 +67,7 @@ export async function POST(req: Request) {
           data: {
             title: `${program.title} - Preview`,
             description: `${program.title} preview video`,
-            url: data.videoUrl,
+            directUrl: data.videoUrl,
             thumbnail: data.thumbnail || null,
             uploadedById: session.user.id,
             programId: program.id,
@@ -97,6 +103,7 @@ export async function POST(req: Request) {
                 partId: createdPart.id,
                 title: section.title,
                 url: section.url,
+                mediaType: section.mediaType || 'video',
                 order: part.sections.indexOf(section),
               }
             })

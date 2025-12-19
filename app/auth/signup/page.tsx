@@ -53,13 +53,15 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 py-12 px-4 sm:px-6 lg:px-8 bg-cover bg-center bg-no-repeat relative animate-background-zoom" style={{ backgroundImage: "url('/uploads/gym-background.jpg')" }}>
+      {/* Dark overlay for dark mode */}
+      <div className="absolute inset-0 bg-black/20 dark:bg-black/40"></div>
+      <div className="max-w-md w-full space-y-8 relative z-10">
         {/* Back button row (matches sign-in) */}
         <div className="flex">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-secondary hover:text-gray-900 transition-colors font-medium group"
+            className="inline-flex items-center gap-2 text-white hover:text-blue-200 transition-colors font-medium group"
           >
             <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
             Back
@@ -75,7 +77,7 @@ export default function SignUpPage() {
             <div className="flex justify-center">
               <Dumbbell className="h-12 w-12 text-primary-600" />
             </div>
-            <h2 className="mt-0 text-3xl font-extrabold text-gray-900 dark:text-gray-100">
+            <h2 className="mt-0 text-3xl font-extrabold text-white">
               Create your account
             </h2>
           </div>

@@ -12,11 +12,14 @@ interface Program {
   level: string
   duration: number
   thumbnail?: string
+  imageUrl?: string
   trainer: { name: string }
   _count: { enrollments: number }
   videoCount: number
   hasVideos: boolean
 }
+
+import ImageWithFallback from '@/components/ImageWithFallback'
 
 export default function ProgramsPage() {
   const [programs, setPrograms] = useState<Program[]>([])
@@ -247,9 +250,18 @@ export default function ProgramsPage() {
                   <div className="card card-hover overflow-hidden">
                     {/* Video Thumbnail */}
                     <div className="relative h-48 mb-4 overflow-hidden rounded-xl">
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
-                        <PlayCircle className="h-12 w-12 text-white/80" />
-                      </div>
+                      {program.imageUrl ? (
+                        <ImageWithFallback
+                          src={program.imageUrl}
+                          alt={program.title}
+                          className="w-full h-full object-cover"
+                          fallback="gradient"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
+                          <PlayCircle className="h-12 w-12 text-white/80" />
+                        </div>
+                      )}
                       
                       {/* Video Count Badge */}
                       {program.hasVideos && (

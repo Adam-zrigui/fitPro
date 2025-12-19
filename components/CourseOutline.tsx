@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ChevronDown, FileText, Video, Dumbbell, Lock, CheckCircle2, Clock } from 'lucide-react'
 import Link from 'next/link'
+import ImageWithFallback from '@/components/ImageWithFallback'
 
 interface Workout {
   week: number
@@ -19,6 +20,7 @@ interface Workout {
       id: string
       title?: string | null
       url?: string | null
+      thumbnail?: string | null
     } | null
   }>
 }
@@ -144,10 +146,20 @@ export default function CourseOutline({
                           <div key={exercise.id} className="p-4 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                             <div className="flex items-center gap-3">
                               <div className="flex-shrink-0">
-                                {exercise.videoUrl ? (
-                                  <Video className="h-5 w-5 text-blue-500" />
+                                {exercise.video?.thumbnail ? (
+                                  <>
+                                    {/* Client-side image with fallback to avoid passing handlers in server components */}
+                                    <ImageWithFallback
+                                      src={exercise.video.thumbnail}
+                                      alt={exercise.video.title || exercise.name}
+                                      className="w-12 h-12 object-cover rounded-lg border border-gray-200 dark:border-slate-600"
+                                      fallback="icon"
+                                    />
+                                  </>
                                 ) : (
-                                  <FileText className="h-5 w-5 text-gray-400" />
+                                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                                    <div className="text-white text-lg">🎬</div>
+                                  </div>
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">

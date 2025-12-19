@@ -64,7 +64,6 @@ export async function POST(req: Request) {
         title,
         description,
         cloudinaryUrl: uploadResult.secure_url,
-        url: uploadResult.secure_url, // Main URL for easy access
         thumbnail: uploadResult.eager?.[0]?.secure_url,
         duration: Math.round(uploadResult.duration || 0),
         size: uploadResult.bytes,
@@ -77,6 +76,7 @@ export async function POST(req: Request) {
         isPublic: true,
       }
     })
+          // url property removed
 
     // If linked to exercise, update the exercise
     if (exerciseId) {
