@@ -19,17 +19,17 @@ interface ProgramCardProps {
 }
 
 export default function ProgramCard({ program }: ProgramCardProps) {
-  // Generate consistent color gradients based on program level
+  // Generate consistent color gradients based on program level - boutique premium colors
   const getGradient = (level: string) => {
     switch(level) {
       case 'Beginner':
-        return 'from-green-400 via-emerald-500 to-teal-600 dark:from-green-600 dark:via-emerald-700 dark:to-teal-800'
+        return 'from-emerald-400 via-teal-500 to-cyan-600 dark:from-emerald-600 dark:via-teal-700 dark:to-cyan-800'
       case 'Intermediate':
-        return 'from-orange-400 via-amber-500 to-yellow-600 dark:from-orange-600 dark:via-amber-700 dark:to-yellow-800'
+        return 'from-purple-400 via-rose-500 to-pink-600 dark:from-purple-600 dark:via-rose-700 dark:to-pink-800'
       case 'Advanced':
-        return 'from-red-400 via-pink-500 to-purple-600 dark:from-red-600 dark:via-pink-700 dark:to-purple-800'
+        return 'from-amber-400 via-yellow-500 to-orange-600 dark:from-amber-600 dark:via-yellow-700 dark:to-orange-800'
       default:
-        return 'from-blue-400 via-purple-500 to-pink-600 dark:from-blue-600 dark:via-purple-700 dark:to-pink-800'
+        return 'from-purple-400 via-rose-500 to-amber-600 dark:from-purple-600 dark:via-rose-700 dark:to-amber-800'
     }
   }
 
@@ -86,12 +86,12 @@ export default function ProgramCard({ program }: ProgramCardProps) {
 
       <div className="flex items-center gap-4 text-sm text-secondary mb-6 pb-4 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center gap-1 flex-1">
-          <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <Clock className="h-4 w-4 text-purple-600 dark:text-purple-400" />
           <span className="font-medium">{program.duration} weeks</span>
         </div>
         {program._count && (
           <div className="flex items-center gap-1 flex-1">
-            <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <Users className="h-4 w-4 text-rose-600 dark:text-rose-400" />
             <span className="font-medium">{program._count.enrollments}</span>
           </div>
         )}
@@ -104,8 +104,9 @@ export default function ProgramCard({ program }: ProgramCardProps) {
         </div>
         <Link 
           href={`/programs/${program.id}`}
-          className="btn-primary py-2 px-4 text-sm"
+          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-gradient-to-r from-purple-600 via-rose-600 to-amber-600 hover:from-purple-700 hover:via-rose-700 hover:to-amber-700 text-white font-medium rounded text-xs"
         >
+          <BarChart3 className="h-2.5 w-2.5" />
           View
         </Link>
       </div>

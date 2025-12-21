@@ -29,6 +29,7 @@ async function main() {
       name: 'John Trainer',
       password: trainerPassword,
       role: 'TRAINER',
+      bio: 'Certified personal trainer with 8+ years of experience helping clients achieve their fitness goals. Specializing in strength training, functional movement, and sustainable lifestyle changes. Passionate about making fitness accessible and enjoyable for everyone.',
     },
   })
 

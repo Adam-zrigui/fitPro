@@ -27,10 +27,12 @@ export default async function SubscribePage({ params }: { params: { id: string }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-slate-900 dark:to-slate-950 py-12">
-      <div className="max-w-3xl mx-auto px-4">
-        <div className="card p-8 text-center">
-          <h1 className="text-3xl font-extrabold mb-4">Subscribe for Unlimited Access</h1>
-          <p className="text-muted mb-6">Get access to this program and all others with one subscription.</p>
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="card p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-extrabold mb-4">Choose Your Subscription Plan</h1>
+            <p className="text-muted text-lg">Get premium access to this program and all fitness content with flexible monthly or yearly plans.</p>
+          </div>
           <SubscribeCta programId={params.id} priceLabel={priceLabel} />
         </div>
       </div>

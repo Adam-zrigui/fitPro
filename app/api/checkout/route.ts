@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import Stripe from 'stripe'
 import { debug, info, warn, error as logError } from '@/lib/logger'
-import { getDefaultSubscriptionPriceId } from '@/lib/subscription'
+import { getSubscriptionPriceId } from '@/lib/subscription'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
@@ -13,7 +13,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -22,10 +22,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User email required for checkout' }, { status: 400 })
     }
 
-    // Get the default subscription price ID
+    // Parse request body to get plan type
+    const body = await req.json().catch(() => ({}))
+    const planType = body.plan || 'monthly' // default to monthly
+
+    // Validate plan type
+    if (!['monthly', 'yearly'].includes(planType)) {
+      return NextResponse.json({ error: 'Invalid plan type. Must be monthly or yearly.' }, { status: 400 })
+    }
+
+    // Get the subscription price ID for the selected plan
     let subscriptionPriceId: string
     try {
-      subscriptionPriceId = await getDefaultSubscriptionPriceId()
+      subscriptionPriceId = await getSubscriptionPriceId(planType as 'monthly' | 'yearly')
     } catch (err: unknown) {
       const em = err instanceof Error ? err.message : String(err)
       logError('Failed to get subscription price ID:', em)
@@ -57,6 +66,7 @@ export async function POST(req: Request) {
       subscription_data: {
         metadata: {
           userId: session.user.id,
+          planType: planType,
         },
       },
       success_url: `${process.env.NEXTAUTH_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -64,6 +74,7 @@ export async function POST(req: Request) {
       customer_email: session.user.email,
       metadata: {
         userId: session.user.id,
+        planType: planType,
       },
     })
 

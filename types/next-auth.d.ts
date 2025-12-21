@@ -8,6 +8,7 @@ declare module "next-auth" {
       name?: string | null
       image?: string | null
       role: string
+      bio?: string | null
       createdAt?: Date
       subscriptionStatus?: string | null
       subscriptionId?: string | null
@@ -19,6 +20,7 @@ declare module "next-auth" {
 
   interface User {
     role: string
+    bio?: string | null
     image?: string | null
     subscriptionStatus?: string | null
     subscriptionId?: string | null
@@ -32,6 +34,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     role: string
     id: string
+    bio?: string | null
     image?: string | null
     subscriptionStatus?: string | null
     subscriptionId?: string | null

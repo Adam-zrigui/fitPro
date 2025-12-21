@@ -123,7 +123,7 @@ export default function DashboardProfileCard({
   }
 
   return (
-    <div className="card bg-gradient-to-r from-blue-50 via-cyan-50 to-blue-50 dark:from-slate-900/20 dark:via-slate-900/20 dark:to-slate-900/20 border-b-4 border-blue-200 dark:border-slate-800 mb-8">
+    <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-2xl border border-gray-100 dark:border-slate-700 w-full h-full">
       {/* Message */}
       {message && (
         <div
@@ -142,98 +142,92 @@ export default function DashboardProfileCard({
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center justify-between">
-        {/* Left: Profile Picture & Info */}
-        <div className="flex gap-4 items-start sm:items-center">
-          {/* Profile Picture */}
-          <div className="relative">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-200 to-cyan-200 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center overflow-hidden shadow-lg border-4 border-white dark:border-slate-900">
-              {imagePreview ? (
-                <img
-                  src={imagePreview}
-                  alt={user.name || 'Profile'}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-5xl">👤</span>
-              )}
-            </div>
-
-            {/* Upload Button */}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploadingImage}
-              className="absolute bottom-0 right-0 p-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-full shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Change profile picture"
-            >
-              <Camera className="h-4 w-4" />
-            </button>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="hidden"
-              disabled={isUploadingImage}
-            />
+      <div className="flex flex-col items-center gap-6 text-center h-full">
+        {/* Profile Picture - Centered at top */}
+        <div className="relative">
+          <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-200 to-cyan-200 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center overflow-hidden shadow-lg border-4 border-white dark:border-slate-900">
+            {imagePreview ? (
+              <img
+                src={imagePreview}
+                alt={user.name || 'Profile'}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-6xl">👤</span>
+            )}
           </div>
 
-          {/* User Info */}
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{user.name || 'User'}</h1>
-            <p className="text-secondary text-sm">{user.email}</p>
-            <div className="flex items-center gap-2 mt-2">
-              <span
-                className={`inline-block px-3 py-1 rounded-full text-sm font-semibold border ${getRoleBadgeColor(
-                  user.role
-                )}`}
-              >
-                {user.role === 'ADMIN' ? '⚙️ Admin' : user.role === 'TRAINER' ? '🏋️ Trainer' : '💪 Member'}
-              </span>
-              {(user.role === 'TRAINER' || user.role === 'ADMIN') && (
-                <span className="text-xs text-muted font-medium">Trainer Verified ✓</span>
-              )}
-            </div>
+          {/* Upload Button */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploadingImage}
+            className="absolute bottom-0 right-0 p-3 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-full shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Change profile picture"
+          >
+            <Camera className="h-5 w-5" />
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="hidden"
+            disabled={isUploadingImage}
+          />
+        </div>
+
+        {/* User Info - Centered */}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{user.name || 'User'}</h1>
+          <p className="text-secondary text-lg mb-3">{user.email}</p>
+          <div className="flex justify-center">
+            <span
+              className={`inline-block px-4 py-2 rounded-full text-sm font-semibold border ${getRoleBadgeColor(
+                user.role
+              )}`}
+            >
+              {user.role === 'ADMIN' ? '⚙️ Admin' : user.role === 'TRAINER' ? '🏋️ Trainer' : '💪 Member'}
+            </span>
+          </div>
+          {(user.role === 'TRAINER' || user.role === 'ADMIN') && (
+            <p className="text-xs text-muted font-medium mt-2">Trainer Verified ✓</p>
+          )}
+        </div>
+
+        {/* Quick Stats - Horizontal row */}
+        <div className="flex gap-4 w-full max-w-xs">
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-4 text-center border border-blue-100 dark:border-slate-800 flex-1">
+            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{totalActivePrograms}</p>
+            <p className="text-sm text-secondary mt-1">Programs</p>
+          </div>
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-4 text-center border border-cyan-100 dark:border-slate-800 flex-1">
+            <p className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">{totalWorkouts}</p>
+            <p className="text-sm text-secondary mt-1">Workouts</p>
           </div>
         </div>
 
-        {/* Right: Stats & Actions */}
-        <div className="flex flex-col gap-3 w-full sm:w-auto">
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white dark:bg-slate-800 rounded-lg p-3 text-center border border-blue-100 dark:border-slate-800">
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{totalActivePrograms}</p>
-              <p className="text-xs text-secondary mt-1">Programs</p>
-            </div>
-            <div className="bg-white dark:bg-slate-800 rounded-lg p-3 text-center border border-cyan-100 dark:border-slate-800">
-              <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">{totalWorkouts}</p>
-              <p className="text-xs text-secondary mt-1">Workouts</p>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-2">
-            {imagePreview && (
-              <button
-                onClick={handleRemoveImage}
-                disabled={isUploadingImage}
-                className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-red-50 dark:bg-red-950 hover:bg-red-100 dark:hover:bg-red-900 text-red-700 dark:text-red-300 rounded-lg font-medium transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Remove profile picture"
-              >
-                <Trash2 className="h-4 w-4" />
-                Remove
-              </button>
-            )}
-            <Link
-              href="/profile"
-              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg font-medium transition-colors text-sm"
-              title="Go to profile settings"
+        {/* Action Buttons - Bottom */}
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          <Link
+            href="/profile"
+            className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-xl font-medium transition-colors"
+            title="Go to profile settings"
+          >
+            <Settings className="h-5 w-5" />
+            Settings
+          </Link>
+          {imagePreview && (
+            <button
+              onClick={handleRemoveImage}
+              disabled={isUploadingImage}
+              className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-50 dark:bg-red-950 hover:bg-red-100 dark:hover:bg-red-900 text-red-700 dark:text-red-300 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Remove profile picture"
             >
-              <Settings className="h-4 w-4" />
-              Settings
-            </Link>
-          </div>
+              <Trash2 className="h-5 w-5" />
+              Remove Picture
+            </button>
+          )}
         </div>
       </div>
     </div>

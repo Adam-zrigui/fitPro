@@ -113,6 +113,7 @@ export async function PATCH(
       const updatePayload: any = {}
       if (data.name) updatePayload.name = data.name
       if (data.image !== undefined) updatePayload.image = data.image
+      if (data.bio !== undefined) updatePayload.bio = data.bio
       if (data.newPassword) updatePayload.password = bcrypt.hashSync(data.newPassword, 10)
 
       const user = await prisma.user.update({
@@ -123,6 +124,7 @@ export async function PATCH(
           email: true,
           name: true,
           image: true,
+          bio: true,
           role: true,
         }
       })
@@ -130,18 +132,20 @@ export async function PATCH(
       return NextResponse.json(user)
     }
 
-    // Default: allow updating name/image only
+    // Default: allow updating name/image/bio only
     const user = await prisma.user.update({
       where: { id: params.id },
       data: {
         ...(data.name && { name: data.name }),
         ...(data.image !== undefined && { image: data.image }),
+        ...(data.bio !== undefined && { bio: data.bio }),
       },
       select: {
         id: true,
         email: true,
         name: true,
         image: true,
+        bio: true,
         role: true,
       }
     })

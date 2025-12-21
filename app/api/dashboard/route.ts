@@ -107,6 +107,55 @@ export async function GET() {
       })
     )
 
+    // Get nutrition entries to compute nutrition streak
+    let nutritionEntries: any[] = []
+    try {
+      if (!prisma || typeof prisma.nutritionEntry === 'undefined') {
+        console.warn('Prisma client missing nutritionEntry model - skipping nutrition streak calculation')
+        nutritionEntries = []
+      } else {
+        nutritionEntries = await executeWithRetry(() =>
+          prisma.nutritionEntry.findMany({
+            where: { userId: session.user.id },
+            orderBy: { date: 'desc' },
+            select: { date: true }
+          })
+        )
+      }
+    } catch (err) {
+      console.warn('Failed to fetch nutrition entries:', err)
+      nutritionEntries = []
+    }
+
+    // Compute consecutive-day nutrition streak (UTC-based)
+    let nutritionStreak = 0
+    try {
+      const seenDates = new Set(nutritionEntries.map((n: any) => {
+        const d = new Date(n.date)
+        // normalize to YYYY-MM-DD in UTC
+        return d.toISOString().slice(0, 10)
+      }))
+
+      const today = new Date()
+      // start from today (UTC)
+      let cursor = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()))
+
+      // count consecutive days with entries
+      while (true) {
+        const dayStr = cursor.toISOString().slice(0, 10)
+        if (seenDates.has(dayStr)) {
+          nutritionStreak += 1
+          // move cursor back one day
+          cursor.setUTCDate(cursor.getUTCDate() - 1)
+        } else {
+          break
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to compute nutrition streak:', err)
+      nutritionStreak = 0
+    }
+
     // Calculate progress per program
     enrollments.forEach(enrollment => {
       const programId = enrollment.program.id
@@ -145,6 +194,7 @@ export async function GET() {
       trainerPrograms,
       totalWorkouts,
       totalActivePrograms,
+      nutritionStreak,
       hasActiveSubscription,
       userRole: session.user.role
     })

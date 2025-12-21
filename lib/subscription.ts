@@ -36,7 +36,7 @@ export async function initializeSubscriptionProducts() {
     // Create product if it doesn't exist
     const product = await stripe.products.create({
       name: 'FitPro Academy Membership',
-      description: 'Unlimited access to all fitness programs, courses, and video content',
+      description: 'Premium access to all fitness programs, courses, and video content',
       metadata: { type: 'fitpro_subscription' },
     })
 

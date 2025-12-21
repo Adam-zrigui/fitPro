@@ -9,6 +9,8 @@ import { ChevronDown, ChevronUp, Play, ArrowLeft, CheckCircle, Clock, BookOpen, 
 import { isYouTubeUrl, getYouTubeEmbedUrl, extractYouTubeId } from '@/lib/youtube'
 import ImageWithFallback from '@/components/ImageWithFallback'
 
+export const dynamic = 'force-dynamic'
+
 interface Exercise {
   id: string
   name: string

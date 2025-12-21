@@ -3,6 +3,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model NutritionEntry {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  date      DateTime
+  calories  Int?
+  protein   Int?
+  carbs     Int?
+  fats      Int?
+  completed Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+}
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,9 +29,12 @@ model User {
   password      String
   role          String    @default("MEMBER")
   image         String?
+  bio           String?   // Trainer bio for fitness professionals
+  favorites     String?   // JSON string of favorite program IDs
   emailVerified DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  nutritionStreak Int?     @default(0)
   
   // Subscription fields
   subscriptionStatus String? @default("inactive") // active, canceled, past_due
@@ -35,6 +53,7 @@ model User {
   nutritionPlans NutritionPlan[]
   payments      Payment[]
   uploadedVideos Video[]  @relation("VideoUploader")
+  nutritionEntries NutritionEntry[]
   emailVerificationTokens EmailVerificationToken[]
   comments      Comment[]
   ratings       Rating[]

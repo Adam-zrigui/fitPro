@@ -39,6 +39,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
           role: user.role,
+          bio: user.bio,
         }
       }
     })
@@ -50,6 +51,7 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role
         token.id = user.id
         token.image = user.image
+        token.bio = (user as any).bio
         // If the Prisma adapter returned subscription fields on sign-in, copy them
         if ((user as any).subscriptionStatus) token.subscriptionStatus = (user as any).subscriptionStatus
         if ((user as any).subscriptionId) token.subscriptionId = (user as any).subscriptionId
@@ -65,6 +67,7 @@ export const authOptions: NextAuthOptions = {
             token.subscriptionStatus = dbUser.subscriptionStatus
             token.subscriptionId = dbUser.subscriptionId
             token.subscriptionPriceId = dbUser.subscriptionPriceId
+            token.bio = dbUser.bio
           }
         } catch (err) {
           // ignore DB errors and return the existing token
@@ -78,6 +81,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role
         session.user.id = token.id
         session.user.image = token.image
+        session.user.bio = token.bio
         // Surface subscription fields on the session user object
         session.user.subscriptionStatus = (token as any).subscriptionStatus
         session.user.subscriptionId = (token as any).subscriptionId

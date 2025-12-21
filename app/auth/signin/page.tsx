@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
-import { signIn } from 'next-auth/react'
+import { useState, useEffect } from 'react'
+import { signIn, useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Dumbbell, Mail, Lock, ArrowRight, ArrowLeft } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
 export default function SignInPage() {
+  const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
@@ -15,6 +16,27 @@ export default function SignInPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [prefetching, setPrefetching] = useState(false)
+
+  // Redirect logged-in users
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      router.push('/dashboard')
+    }
+  }, [status, session, router])
+
+  // Show loading while checking session
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  // Don't render anything if user is authenticated (will redirect)
+  if (status === 'authenticated') {
+    return null
+  }
 
   const isRegistered = searchParams.get('registered') === 'true'
 
@@ -185,7 +207,7 @@ export default function SignInPage() {
 
         {/* Footer Info */}
         <div className="text-center text-sm text-muted">
-          <p>Get unlimited access to all fitness programs with a subscription</p>
+          <p>Get premium access to all fitness programs from our expert coaches</p>
         </div>
       </div>
 

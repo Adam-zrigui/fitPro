@@ -138,7 +138,7 @@ export default function SubscriptionSetupPage() {
               <div className="bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-lg p-6">
                 <h2 className="font-bold mb-4">Features</h2>
                 <ul className="space-y-2 text-secondary list-disc list-inside">
-                  <li>Single payment for unlimited access</li>
+                  <li>Single payment for premium access</li>
                   <li>Automatic monthly renewal</li>
                   <li>Cancel anytime (through Stripe portal)</li>
                   <li>One subscription opens all courses</li>
