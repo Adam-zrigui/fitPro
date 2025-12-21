@@ -171,7 +171,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <div className="text-lg font-bold text-gray-900 dark:text-white">{category.programs}</div>
+                  
                   <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
                 </div>
               </div>
